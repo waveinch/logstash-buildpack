@@ -1,0 +1,5 @@
+---
+applications:
+- name: andi-logstash
+  services:
+  - andi-elasticsearch

@@ -1,0 +1,9 @@
+enable-service-fallback: true
+config-templates:
+curator:
+  install: false
+plugins:
+certificates:
+- elasticsearch
+buildpack:
+  log-level: debug

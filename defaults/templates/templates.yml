@@ -1,0 +1,29 @@
+---
+alias:
+  credentials-host-field: host
+  credentials-username-field: username
+  credentials-password-field: password
+templates:
+- name: cf-input-syslog
+  type: input
+  is-default: true
+- name: cf-filter-syslog
+  type: filter
+  is-default: true
+  is-fallback: false
+  groks:
+- name: cf-output-elasticsearch
+  type: output
+  is-default: true
+  is-fallback: false
+  tags:
+  - elasticsearch
+  - elastic
+  plugins:
+- name: cf-output-stdout
+  type: output
+  is-default: false
+  is-fallback: true
+  tags:
+
+

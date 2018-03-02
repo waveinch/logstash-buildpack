@@ -1,0 +1,33 @@
+---
+log-level: Info
+version: 6.0.0
+cmd-args: ""
+java-opts: ""
+reserved-memory: 300
+heap-percentage: 75
+config-check: true
+enable-service-fallback: true
+config-templates:
+- name: cf-input-syslog
+- name: cf-filter-syslog
+- name: cf-output-elasticsearch
+  service-instance-name: my-elasticsearch
+- name: cf-output-elasticsearch
+  service-instance-name: my-elasticsearch2
+- name: cf-output-stdout
+x-pack:
+  management:
+    enabled: false
+    collection-interval: 10s
+  monitoring:
+    enabled: false
+    collection-interval: 10s
+plugins:
+- logstash-input-kafka
+- logstash-output-kafka
+certificates:
+- elasticsearch
+curator:
+  install: true
+  version: ""
+  schedule: ""
