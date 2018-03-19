@@ -2,11 +2,11 @@
 language: logstash
 default_versions:
 - name: logstash
-  version: '6.0.x'
+  version: '6.1.3'
 - name: logstash-plugins
   version: '6.0.x'
 - name: x-pack
-  version: '6.0.x'
+  version: '6.1.3'
 - name: openjdk
   version: '1.8.x'
 - name: curator
@@ -19,9 +19,9 @@ default_versions:
   version: '0.2.x'
 dependencies:
 - name: logstash
-  version: 6.0.0
-  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/logstash-6.0.0.tar.gz
-  sha256: f98252002d15aa7547bc8beea4a18f376ac01d1bab4d2ff9da6acbcdc2f21233
+  version: 6.1.3
+  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/logstash-6.1.3.tar.gz
+  sha256: 5a5a03684fd9b3582c3982c208f14b37d8f4ca061911e2cccc51332bca80fd70
   cf_stacks:
   - cflinuxfs2
 - name: logstash-plugins
@@ -31,9 +31,9 @@ dependencies:
   cf_stacks:
   - cflinuxfs2
 - name: x-pack
-  version: 6.0.0
-  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/x-pack-6.0.0.tar.gz
-  sha256: b3c326e36ac52b036c3d62975bc8221c29027683e48963ec2092ce6da8f7d0b9
+  version: 6.1.3
+  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/x-pack-6.1.3.tar.gz
+  sha256: 6cae1a42f834210f9be7a9003a342d262325b941984b7cf199b51155659a2a55
   cf_stacks:
   - cflinuxfs2
 - name: openjdk
