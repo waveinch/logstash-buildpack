@@ -1,7 +1,5 @@
 # Logstash Buildpack for Cloud Foundry
 
-**WARNING**: This is work in progress, do not use in production.
-
 This buildpack allows to deploy [Logstash](https://www.elastic.co/products/logstash) as an app in Cloud Foundry.
 The buildpack also includes curator, which allows to manage the indices in Elasticsearch.
 
