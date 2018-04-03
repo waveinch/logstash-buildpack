@@ -119,10 +119,13 @@ The following settings are allowed:
 
 
 ```
+cf-input-http:
+- defines listening ports for http 
+- default in automatic mode
+
 cf-input-syslog:
 - defines listening ports for tcp and udp 
 - type syslog
-- default in automatic mode
 
 cf-filter-syslog:
 - prepares the logstash events according to the syslog standard RFC 5424
@@ -150,8 +153,11 @@ reserved-memory: 300
 heap-percentage: 75
 config-check: true
 enable-service-fallback: true
+logstash-credentials:
+  username: myUsername
+  password: myPassword
 config-templates:
-- name: cf-input-syslog
+- name: cf-input-http
 - name: cf-filter-syslog
 - name: cf-output-elasticsearch
   service-instance-name: my-elasticsearch
