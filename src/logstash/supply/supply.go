@@ -820,9 +820,9 @@ func (gs *Supplier) InstallTemplates() error {
 		os.Setenv("CREDENTIALS_USERNAME_FIELD", gs.TemplatesConfig.Alias.CredentialsUsernameField)
 		os.Setenv("CREDENTIALS_PASSWORD_FIELD", gs.TemplatesConfig.Alias.CredentialsPasswordField)
 		if len(gs.LogstashConfig.LogstashCredentials.Username) > 0 {
-			os.Setenv("LOGSTASH_AUTH", true)
+			os.Setenv("LOGSTASH_AUTH", "true")
 		} else {
-			os.Setenv("LOGSTASH_AUTH", false)
+			os.Setenv("LOGSTASH_AUTH", "false")
 		}
 		os.Setenv("LOGSTASH_USERNAME", gs.LogstashConfig.LogstashCredentials.Username)
 		os.Setenv("LOGSTASH_PASSWORD", gs.LogstashConfig.LogstashCredentials.Password)
