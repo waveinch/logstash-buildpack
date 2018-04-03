@@ -4,9 +4,13 @@ alias:
   credentials-username-field: logstash_system_username
   credentials-password-field: logstash_system_password
 templates:
-- name: cf-input-syslog
+- name: cf-input-http
   type: input
   is-default: true
+- name: cf-input-syslog
+  type: input
+  is-default: false
+  is-fallback: false
 - name: cf-filter-syslog
   type: filter
   is-default: true

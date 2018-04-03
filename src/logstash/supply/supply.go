@@ -36,28 +36,28 @@ type Stager interface {
 }
 
 type Supplier struct {
-	Stager               Stager
-	Manifest             Manifest
-	Log                  *libbuildpack.Logger
-	BuildpackDir         string
-	CachedDeps           map[string]string
-	DepCacheDir			 string
-	GTE                  Dependency
-	Jq                   Dependency
-	Ofelia               Dependency
-	Curator              Dependency
-	OpenJdk              Dependency
-	Logstash             Dependency
-	LogstashPlugins      Dependency
-	XPack                Dependency
-	LogstashConfig       conf.LogstashConfig
-	TemplatesConfig      conf.TemplatesConfig
-	VcapApp              conf.VcapApp
-	VcapServices         conf.VcapServices
-	ConfigFilesExists    bool
-	CuratorFilesExists   bool
-	TemplatesToInstall   []conf.Template
-	PluginsToInstall     map[string]string
+	Stager             Stager
+	Manifest           Manifest
+	Log                *libbuildpack.Logger
+	BuildpackDir       string
+	CachedDeps         map[string]string
+	DepCacheDir        string
+	GTE                Dependency
+	Jq                 Dependency
+	Ofelia             Dependency
+	Curator            Dependency
+	OpenJdk            Dependency
+	Logstash           Dependency
+	LogstashPlugins    Dependency
+	XPack              Dependency
+	LogstashConfig     conf.LogstashConfig
+	TemplatesConfig    conf.TemplatesConfig
+	VcapApp            conf.VcapApp
+	VcapServices       conf.VcapServices
+	ConfigFilesExists  bool
+	CuratorFilesExists bool
+	TemplatesToInstall []conf.Template
+	PluginsToInstall   map[string]string
 }
 
 type Dependency struct {
@@ -237,7 +237,7 @@ func (gs *Supplier) EvalTestCache() error {
 
 func (gs *Supplier) EvalLogstashFile() error {
 	const configCheck = false
-	const reservedMemory  = 300
+	const reservedMemory = 300
 	const heapPersentage = 90
 	const logLevel = "Info"
 	const noCache = false
@@ -323,7 +323,6 @@ func (gs *Supplier) PrepareAppDirStructure() error {
 		return err
 	}
 
-
 	//create dir plugins in DepDir
 	dir = filepath.Join(gs.Stager.DepDir(), "plugins")
 	err = os.MkdirAll(dir, 0755)
@@ -362,9 +361,9 @@ func (gs *Supplier) EvalTemplatesFile() error {
 	const credPasswordField = "password"
 
 	gs.TemplatesConfig = conf.TemplatesConfig{
-		Set:            true,
-		Alias:        conf.Alias{Set: true, CredentialsHostField: credHostField, CredentialsUsernameField: credUsernameField, CredentialsPasswordField: credPasswordField},
-    }
+		Set:   true,
+		Alias: conf.Alias{Set: true, CredentialsHostField: credHostField, CredentialsUsernameField: credUsernameField, CredentialsPasswordField: credPasswordField},
+	}
 	templateFile := filepath.Join(gs.BPDir(), "defaults/templates/templates.yml")
 
 	data, err := ioutil.ReadFile(templateFile)
@@ -820,6 +819,13 @@ func (gs *Supplier) InstallTemplates() error {
 		os.Setenv("CREDENTIALS_HOST_FIELD", gs.TemplatesConfig.Alias.CredentialsHostField)
 		os.Setenv("CREDENTIALS_USERNAME_FIELD", gs.TemplatesConfig.Alias.CredentialsUsernameField)
 		os.Setenv("CREDENTIALS_PASSWORD_FIELD", gs.TemplatesConfig.Alias.CredentialsPasswordField)
+		if len(gs.LogstashConfig.LogstashCredentials.Username) > 0 {
+			os.Setenv("LOGSTASH_AUTH", "true")
+		} else {
+			os.Setenv("LOGSTASH_AUTH", "false")
+		}
+		os.Setenv("LOGSTASH_USERNAME", gs.LogstashConfig.LogstashCredentials.Username)
+		os.Setenv("LOGSTASH_PASSWORD", gs.LogstashConfig.LogstashCredentials.Password)
 
 		templateFile := filepath.Join(gs.BPDir(), "defaults/templates/", ti.Name+".conf")
 		destFile := filepath.Join(gs.Stager.DepDir(), "conf.d", ti.Name+".conf")
