@@ -10,9 +10,9 @@ import (
 
 // [BP]/defaults/templates/templates.yml
 type TemplatesConfig struct {
-	Set         bool             `yaml:"-"`
-	Alias 		Alias            `yaml:"alias"`
-	Templates []Template         `yaml:"templates"`
+	Set       bool       `yaml:"-"`
+	Alias     Alias      `yaml:"alias"`
+	Templates []Template `yaml:"templates"`
 }
 
 type Alias struct {
@@ -44,26 +44,32 @@ func (c *TemplatesConfig) Parse(data []byte) (err error) {
 
 // [APP]Logstash
 type LogstashConfig struct {
-	Set                   bool             `yaml:"-"`
-	Version               string           `yaml:"version"`
-	Plugins               []string         `yaml:"plugins"`
-	Certificates          []string         `yaml:"certificates"`
-	CmdArgs               string           `yaml:"cmd-args"`
-	JavaOpts              string           `yaml:"java-opts"`
-	ReservedMemory        int              `yaml:"reserved-memory"`
-	HeapPercentage        int              `yaml:"heap-percentage"`
-	ConfigCheck           bool             `yaml:"config-check"`
-	ConfigTemplates       []ConfigTemplate `yaml:"config-templates"`
-	EnableServiceFallback bool             `yaml:"enable-service-fallback"`
-	Curator               Curator          `yaml:"curator"`
-	Buildpack             Buildpack        `yaml:"buildpack"`
+	Set                   bool                `yaml:"-"`
+	Version               string              `yaml:"version"`
+	Plugins               []string            `yaml:"plugins"`
+	Certificates          []string            `yaml:"certificates"`
+	CmdArgs               string              `yaml:"cmd-args"`
+	JavaOpts              string              `yaml:"java-opts"`
+	ReservedMemory        int                 `yaml:"reserved-memory"`
+	HeapPercentage        int                 `yaml:"heap-percentage"`
+	ConfigCheck           bool                `yaml:"config-check"`
+	ConfigTemplates       []ConfigTemplate    `yaml:"config-templates"`
+	EnableServiceFallback bool                `yaml:"enable-service-fallback"`
+	Curator               Curator             `yaml:"curator"`
+	Buildpack             Buildpack           `yaml:"buildpack"`
+	LogstashCredentials   LogstashCredentials `yaml:"logstash-credentials"`
+}
+
+type LogstashCredentials struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 type Buildpack struct {
-    Set                   bool 			   `yaml:"-"`
-	LogLevel              string           `yaml:"log-level"`
-	NoCache               bool             `yaml:"no-cache"`
-	DoSleepCommand        bool             `yaml:"sleep-command"`
+	Set            bool   `yaml:"-"`
+	LogLevel       string `yaml:"log-level"`
+	NoCache        bool   `yaml:"no-cache"`
+	DoSleepCommand bool   `yaml:"sleep-command"`
 }
 
 type ConfigTemplate struct {
@@ -150,7 +156,7 @@ func (s *VcapServices) WithTags(tags []string) []VcapService {
 
 func (s *VcapServices) UserProvided() []VcapService {
 	result := []VcapService{}
-	for service , service_instances := range *s {
+	for service, service_instances := range *s {
 		if service == "user-provided" {
 			for i := range service_instances {
 				service_instance := service_instances[i]
@@ -161,7 +167,6 @@ func (s *VcapServices) UserProvided() []VcapService {
 
 	return result
 }
-
 
 func (c *VcapServices) Parse(data []byte) (err error) {
 	defer func() {

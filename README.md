@@ -95,6 +95,8 @@ The `Logstash` file in the root directory of the app is required. It is used by 
 
 The following settings are allowed:
 
+* `logstash-credentials.username`: the username used for authenticating when sending messages to logstash (optional)
+* `logstash-credentials.password`: the password used for authenticating when sending messages to logstash (optional)
 * `certificates`: additional certificates to install (array of certificate names, without file extension). Defaults to none.
 * `cmd-args`: Additional command line arguments for Logstash. Empty by default
 * `config-check`: Shall we do a Logstash config test before startting Logtstash. Defaults to true.
