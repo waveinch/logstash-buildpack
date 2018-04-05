@@ -222,7 +222,7 @@ Put any additional required plugin (*.gem or *.zip) in this folder. Also define 
 To deploy the Logstash app to Cloud Foundry using this buildpack, use the following command:
 
 ```
-cf push -b https://github.com/swisscom/swisscom/cf-buildpack-logstash.git
+cf push -b https://github.com/swisscom/swisscom/logstash-buildpack.git
 ```
 
 After the successful upload of the application to Cloud Foundry, you may use a *user provided service* to ship the logs of your
