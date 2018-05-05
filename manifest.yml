@@ -78,6 +78,7 @@ include_files:
 - defaults/curator/curator.yml
 - defaults/templates/cf-filter-syslog.conf
 - defaults/templates/cf-input-syslog.conf
+- defaults/templates/cf-input-http.conf
 - defaults/templates/cf-output-elasticsearch.conf
 - defaults/templates/cf-output-stdout.conf
 - defaults/templates/templates.yml
