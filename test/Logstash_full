@@ -29,5 +29,4 @@ certificates:
 - elasticsearch
 curator:
   install: true
-  version: ""
   schedule: ""

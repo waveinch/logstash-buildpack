@@ -109,10 +109,10 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 				$GTE_HOME/gte $LS_ROOT/grok-patterns $HOME/grok-patterns
 
 				$GTE_HOME/gte $HOME/curator.d $HOME/curator.conf.d
-				$GTE_HOME/gte $LS_ROOT/curator.d $HOME/curator.conf.d
+				$GTE_HOME/gte -n $LS_ROOT/curator.d $HOME/curator.conf.d
 
-				$GTE_HOME/gte $LS_ROOT/curator $HOME/bin
-				$GTE_HOME/gte $LS_ROOT/ofelia $HOME/ofelia
+				$GTE_HOME/gte $LS_ROOT/ofelia/scripts $HOME/bin
+				$GTE_HOME/gte $LS_ROOT/ofelia/config $HOME/ofelia
 
 				echo "--> STARTING LOGSTASH ..."
 				if [ -n "$LS_CMD_ARGS" ] ; then
@@ -123,16 +123,16 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 					sleep 3600
 				fi
 
+				chmod +x $HOME/bin/*.sh
+
 				if [ -n "$LS_CURATOR_ENABLED" ] ; then
 					echo "--> running Curator once to create the Logstash index for today"
-					echo "    !! Curator is currently disabled !!"
-					#${HOME}/bin/curator.sh
+					${HOME}/bin/curator.sh
 
 					echo "--> starting Ofelia for Curator in the background"
-					#$OFELIA_HOME/ofelia daemon --config ${HOME}/ofelia/schedule.ini 2>&1 &
+					$OFELIA_HOME/ofelia daemon --config ${HOME}/ofelia/schedule.ini 2>&1 &
 				fi
 
-				chmod +x $HOME/bin/*.sh
 				$LOGSTASH_HOME/bin/logstash -f logstash.conf.d $LS_CMD_ARGS
 				`))
 

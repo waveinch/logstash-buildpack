@@ -11,7 +11,7 @@
   branch = "master"
   name = "github.com/andibrunner/libbuildpack"
   packages = [".","cutlass"]
-  revision = "9f9f36025ddd4bb19ca1ce0d708db09809f23e6c"
+  revision = "570e82b9058f51028b2bb906b244c0bb19f4da66"
 
 [[projects]]
   name = "github.com/blang/semver"

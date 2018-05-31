@@ -22,6 +22,10 @@ type Manifest interface {
 	InstallDependencyWithCache(libbuildpack.Dependency, string, string) error
 	InstallOnlyVersion(string, string) error
 	IsCached() bool
+	WarnNewerPatch(libbuildpack.Dependency) error
+	WarnEndOfLife(libbuildpack.Dependency) error
+	GetEntry(libbuildpack.Dependency) (*libbuildpack.ManifestEntry, error)
+	FetchDependency(libbuildpack.Dependency, string) error
 }
 
 type Stager interface {
@@ -36,16 +40,20 @@ type Stager interface {
 }
 
 type Supplier struct {
+	Version            string
 	Stager             Stager
 	Manifest           Manifest
 	Log                *libbuildpack.Logger
 	BuildpackDir       string
 	CachedDeps         map[string]string
 	DepCacheDir        string
+	DepTmpDir          string
+	DepTmpExtractDir   string
 	GTE                Dependency
 	Jq                 Dependency
 	Ofelia             Dependency
 	Curator            Dependency
+	Python3            Dependency
 	OpenJdk            Dependency
 	Logstash           Dependency
 	LogstashPlugins    Dependency
@@ -61,19 +69,26 @@ type Supplier struct {
 }
 
 type Dependency struct {
-	Name            string
-	DirName         string
-	Version         string
-	VersionParts    int
-	ConfigVersion   string
-	RuntimeLocation string
-	StagingLocation string
+	Name               string
+	Version            string
+	FullName           string
+	VersionParts       int
+	ConfigVersion      string
+	RuntimeLocation    string
+	StagingLocation    string
+	CacheLocation      string
+	TmpLocation        string
+	TmpExtractLocation string
+	DoCompile          bool
 }
 
 func Run(gs *Supplier) error {
 
 	//Init maps for the Installation
-	gs.DepCacheDir = filepath.Join(gs.Stager.CacheDir(), "dependencies")
+	gs.Version = "v1"
+	gs.DepCacheDir = filepath.Join(gs.Stager.CacheDir(), "dependencies", gs.Version)
+	gs.DepTmpDir = filepath.Join("/tmp", "dependencies", gs.Version)
+	gs.DepTmpExtractDir = filepath.Join("/tmp", "dependencies", gs.Version, "extracted")
 	gs.PluginsToInstall = make(map[string]string)
 	gs.TemplatesToInstall = []conf.Template{}
 
@@ -119,27 +134,41 @@ func Run(gs *Supplier) error {
 
 	//Install Dependencies
 	if err := gs.InstallDependencyGTE(); err != nil {
+		gs.Log.Error("Error installing dependency GTE: %s", err.Error())
 		return err
 	}
 	if err := gs.InstallDependencyJq(); err != nil {
+		gs.Log.Error("Error installing dependency JQ: %s", err.Error())
 		return err
 	}
 	if gs.LogstashConfig.Curator.Install {
 		if err := gs.InstallDependencyOfelia(); err != nil {
+			gs.Log.Error("Error installing dependency Ofelia: %s", err.Error())
+			return err
+		}
+		if err := gs.InstallDependencyPython3(); err != nil {
+			gs.Log.Error("Error installing dependency Python3: %s", err.Error())
 			return err
 		}
 		if err := gs.InstallDependencyCurator(); err != nil {
+			gs.Log.Error("Error installing dependency Curator: %s", err.Error())
+			return err
+		}
+		if err := gs.PipInstallCurator(); err != nil {
+			gs.Log.Error("Error installing dependency Pip Install Curator: %s", err.Error())
 			return err
 		}
 
 	}
 
 	if err := gs.InstallDependencyOpenJdk(); err != nil {
+		gs.Log.Error("Error installing dependency Open JDK: %s", err.Error())
 		return err
 	}
 
 	//Prepare Staging Environment
 	if err := gs.PrepareStagingEnvironment(); err != nil {
+		gs.Log.Error("Error preparing Staging environment: %s", err.Error())
 		return err
 	}
 
@@ -151,16 +180,19 @@ func Run(gs *Supplier) error {
 
 	//Install User Certificates
 	if err := gs.InstallUserCertificates(); err != nil {
+		gs.Log.Error("Error installing user certificates: %s", err.Error())
 		return err
 	}
 
 	//Install Curator/Ofelia
 	if err := gs.PrepareCurator(); err != nil {
+		gs.Log.Error("Error preparing Curator: %s", err.Error())
 		return err
 	}
 
 	//Install Logstash
 	if err := gs.InstallLogstash(); err != nil {
+		gs.Log.Error("Error installing Logstash: %s", err.Error())
 		return err
 	}
 
@@ -171,6 +203,7 @@ func Run(gs *Supplier) error {
 		for key, _ := range gs.PluginsToInstall {
 			if strings.HasPrefix(key, "x-pack") { //is x-pack plugin
 				if err := gs.InstallDependencyXPack(); err != nil {
+					gs.Log.Error("Error installing dependency X-Pack: %s", err.Error())
 					return err
 				}
 				break
@@ -180,6 +213,7 @@ func Run(gs *Supplier) error {
 		for key, _ := range gs.PluginsToInstall {
 			if !strings.HasPrefix(key, "x-pack") { //other than  x-pack plugin
 				if err := gs.InstallDependencyLogstashPlugins(); err != nil {
+					gs.Log.Error("Error installing dependency 'Logstash plugins': %s", err.Error())
 					return err
 				}
 				break
@@ -188,18 +222,21 @@ func Run(gs *Supplier) error {
 
 		//Install Logstash Plugins
 		if err := gs.InstallLogstashPlugins(); err != nil {
+			gs.Log.Error("Error installing Logstash plugins: %s", err.Error())
 			return err
 		}
 	}
 
 	//Install Logstash Plugins
 	if err := gs.ListLogstashPlugins(); err != nil {
+		gs.Log.Error("Error listing Logstash plugins: %s", err.Error())
 		return err
 	}
 
 	//check Logstash config
 	if gs.LogstashConfig.ConfigCheck {
 		if err := gs.CheckLogstash(); err != nil {
+			gs.Log.Error("Error checking configuration : %s", err.Error())
 			return err
 		}
 
@@ -337,6 +374,13 @@ func (gs *Supplier) PrepareAppDirStructure() error {
 		return err
 	}
 
+	//create dir scripts in DepDir
+	dir = filepath.Join(gs.Stager.DepDir(), "scripts")
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+
 	//create dir curator in DepDir
 	dir = filepath.Join(gs.Stager.DepDir(), "curator")
 	err = os.MkdirAll(dir, 0755)
@@ -344,8 +388,15 @@ func (gs *Supplier) PrepareAppDirStructure() error {
 		return err
 	}
 
-	//create dir ofelia in DepDir
-	dir = filepath.Join(gs.Stager.DepDir(), "ofelia")
+	//create dir ofelia/scripts in DepDir
+	dir = filepath.Join(gs.Stager.DepDir(), "ofelia", "scripts")
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+
+	//create dir ofelia/config in DepDir
+	dir = filepath.Join(gs.Stager.DepDir(), "ofelia", "config")
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return err
@@ -434,7 +485,7 @@ func (gs *Supplier) EvalEnvironment() error {
 func (gs *Supplier) InstallDependencyGTE() error {
 	var err error
 
-	gs.GTE, err = gs.NewDependency("gte", 3, "")
+	gs.GTE, err = gs.NewDependency("gte", 3, "", false)
 	if err != nil {
 		return err
 	}
@@ -458,7 +509,7 @@ func (gs *Supplier) InstallDependencyGTE() error {
 func (gs *Supplier) InstallDependencyJq() error {
 	var err error
 
-	gs.Jq, err = gs.NewDependency("jq", 3, "")
+	gs.Jq, err = gs.NewDependency("jq", 3, "", false)
 	if err != nil {
 		return err
 	}
@@ -480,7 +531,7 @@ func (gs *Supplier) InstallDependencyJq() error {
 
 func (gs *Supplier) InstallDependencyOfelia() error {
 	var err error
-	gs.Ofelia, err = gs.NewDependency("ofelia", 3, "")
+	gs.Ofelia, err = gs.NewDependency("ofelia", 3, "", false)
 	if err != nil {
 		return err
 	}
@@ -500,10 +551,34 @@ func (gs *Supplier) InstallDependencyOfelia() error {
 	return nil
 }
 
+func (gs *Supplier) InstallDependencyPython3() error {
+
+	var err error
+	gs.Python3, err = gs.NewDependency("python3", 3, "", true)
+	if err != nil {
+		return err
+	}
+
+	if err := gs.InstallDependency(gs.Python3); err != nil {
+		return err
+	}
+
+	content := util.TrimLines(fmt.Sprintf(`
+				export PYTHONHOME=$DEPS_DIR/%s
+				PATH=${PYTHONHOME}/bin:${PATH}
+				`, gs.Python3.RuntimeLocation))
+
+	if err := gs.WriteDependencyProfileD(gs.Python3.Name, content); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (gs *Supplier) InstallDependencyCurator() error {
 
 	var err error
-	gs.Curator, err = gs.NewDependency("curator", 3, "")
+	gs.Curator, err = gs.NewDependency("curator", 3, "", false)
 	if err != nil {
 		return err
 	}
@@ -513,13 +588,39 @@ func (gs *Supplier) InstallDependencyCurator() error {
 	}
 
 	content := util.TrimLines(fmt.Sprintf(`
-				export CURATOR_HOME=$DEPS_DIR/%s
-				PATH=${CURATOR_HOME}/python3/bin:${CURATOR_HOME}/curator/bin:${PATH}
-				`, gs.Curator.RuntimeLocation))
+				export CURATOR_HOME=$DEPS_DIR/%s/%s
+				export PYTHONPATH=${CURATOR_HOME}/lib/python3.6/site-packages
+				PATH=${CURATOR_HOME}/bin:${PATH}
+				`, gs.Stager.DepsIdx(), "curator"))
 
 	if err := gs.WriteDependencyProfileD(gs.Curator.Name, content); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (gs *Supplier) PipInstallCurator() error {
+
+	scriptName := "pip_install_curator"
+	content := util.TrimLines(fmt.Sprintf(`
+				#!/bin/bash
+				export PATH=%s/bin:$PATH
+    			# --no-index prevents contacting pypi to download packages
+    			# --find-links tells pip where to look for the dependancies
+    			pip3 install --no-index --find-links %s/dependencies --install-option="--prefix=%s/curator" elasticsearch-curator -v
+				pip3 list
+				`, filepath.Join(gs.Python3.StagingLocation), filepath.Join(gs.Curator.StagingLocation), filepath.Join(gs.Stager.DepDir())))
+
+	if err := gs.WriteScript(scriptName, content); err != nil {
+		gs.Log.Error("Error WriteScript %s: %s", scriptName, err.Error())
+		return err
+	}
+
+	if err := gs.ExecScript(scriptName); err != nil {
+		gs.Log.Error("Error ExecScript %s: %s", scriptName, err.Error())
+		return err
+	}
+
 	return nil
 }
 
@@ -528,21 +629,18 @@ func (gs *Supplier) PrepareCurator() error {
 	//create Curator start script
 	content := util.TrimLines(fmt.Sprintf(`
 				#!/bin/bash
-				export PYTHONHOME=${CURATOR_HOME}/python3
-				export PYTHONPATH=${CURATOR_HOME}/curator/lib/python3.4/site-packages
 				export LC_ALL=en_US.UTF-8
 				export LANG=en_US.UTF-8
-				export PATH=${CURATOR_HOME}/python3/bin:${CURATOR_HOME}/curator/bin:${PATH}
-				${CURATOR_HOME}/python3/bin/python3 ${CURATOR_HOME}/curator/bin/curator --config ${HOME}/curator.d/curator.yml ${HOME}/curator.d/actions.yml
+				${PYTHONHOME}/bin/python3 ${CURATOR_HOME}/bin/curator --config ${HOME}/curator.conf.d/curator.yml ${HOME}/curator.conf.d/actions.yml
 				`))
 
-	err := ioutil.WriteFile(filepath.Join(gs.Stager.DepDir(), "curator", "curator.sh"), []byte(content), 0755)
+	err := ioutil.WriteFile(filepath.Join(gs.Stager.DepDir(), "ofelia", "scripts", "curator.sh"), []byte(content), 0755)
 	if err != nil {
 		gs.Log.Error("Unable to create Curator start script: %s", err.Error())
 		return err
 	}
 
-	//create Curator start script
+	//create ofelia schedule.ini
 	content = util.TrimLines(fmt.Sprintf(`
 				[job-local "curator"]
 				schedule = %s
@@ -550,24 +648,20 @@ func (gs *Supplier) PrepareCurator() error {
 				`,
 		gs.LogstashConfig.Curator.Schedule))
 
-	err = ioutil.WriteFile(filepath.Join(gs.Stager.DepDir(), "ofelia", "schedule.ini"), []byte(content), 0644)
+	err = ioutil.WriteFile(filepath.Join(gs.Stager.DepDir(), "ofelia", "config", "schedule.ini"), []byte(content), 0644)
 	if err != nil {
 		gs.Log.Error("Unable to create Ofelia schedule.ini: %s", err.Error())
 		return err
 	}
 
-	// pre-processing of curator config templates if no user files exist
-	if !gs.CuratorFilesExists {
+	// pre-processing of curator config templates
+	templateFile := filepath.Join(gs.BPDir(), "defaults/curator")
+	destFile := filepath.Join(gs.Stager.DepDir(), "curator.d")
 
-		templateFile := filepath.Join(gs.BPDir(), "defaults/curator")
-		destFile := filepath.Join(gs.Stager.DepDir(), "curator.d")
-
-		err := exec.Command(fmt.Sprintf("%s/gte", gs.GTE.StagingLocation), "-d", "<<:>>", templateFile, destFile).Run()
-		if err != nil {
-			gs.Log.Error("Error pre-processing curator config templates: %s", err.Error())
-			return err
-		}
-
+	err = exec.Command(fmt.Sprintf("%s/gte", gs.GTE.StagingLocation), "-d", "<<:>>", templateFile, destFile).Run()
+	if err != nil {
+		gs.Log.Error("Error pre-processing curator config templates: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -575,7 +669,7 @@ func (gs *Supplier) PrepareCurator() error {
 
 func (gs *Supplier) InstallDependencyOpenJdk() error {
 	var err error
-	gs.OpenJdk, err = gs.NewDependency("openjdk", 3, "")
+	gs.OpenJdk, err = gs.NewDependency("openjdk", 3, "", false)
 	if err != nil {
 		return err
 	}
@@ -599,7 +693,7 @@ func (gs *Supplier) InstallDependencyXPack() error {
 
 	//Install x-pack from S3
 	var err error
-	gs.XPack, err = gs.NewDependency("x-pack", 3, gs.LogstashConfig.Version) //same version as Logstash
+	gs.XPack, err = gs.NewDependency("x-pack", 3, gs.LogstashConfig.Version, false) //same version as Logstash
 	if err != nil {
 		return err
 	}
@@ -615,7 +709,7 @@ func (gs *Supplier) InstallDependencyLogstashPlugins() error {
 
 	//Install logstash-plugins from S3
 	var err error
-	gs.LogstashPlugins, err = gs.NewDependency("logstash-plugins", 3, gs.LogstashConfig.Version) //same version as Logstash
+	gs.LogstashPlugins, err = gs.NewDependency("logstash-plugins", 3, gs.LogstashConfig.Version, false) //same version as Logstash
 	if err != nil {
 		return err
 	}
@@ -629,7 +723,7 @@ func (gs *Supplier) InstallDependencyLogstashPlugins() error {
 
 func (gs *Supplier) InstallLogstash() error {
 	var err error
-	gs.Logstash, err = gs.NewDependency("logstash", 3, gs.LogstashConfig.Version)
+	gs.Logstash, err = gs.NewDependency("logstash", 3, gs.LogstashConfig.Version, false)
 	if err != nil {
 		return err
 	}

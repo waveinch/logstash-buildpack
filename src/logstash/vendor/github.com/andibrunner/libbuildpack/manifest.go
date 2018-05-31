@@ -185,7 +185,7 @@ func (m *Manifest) InstallDependency(dep Dependency, outputDir string) error {
 	}
 	tmpFile := filepath.Join(tmpDir, "archive")
 
-	entry, err := m.getEntry(dep)
+	entry, err := m.GetEntry(dep)
 	if err != nil {
 		return err
 	}
@@ -195,12 +195,12 @@ func (m *Manifest) InstallDependency(dep Dependency, outputDir string) error {
 		return err
 	}
 
-	err = m.warnNewerPatch(dep)
+	err = m.WarnNewerPatch(dep)
 	if err != nil {
 		return err
 	}
 
-	err = m.warnEndOfLife(dep)
+	err = m.WarnEndOfLife(dep)
 	if err != nil {
 		return err
 	}
@@ -228,7 +228,7 @@ func (m *Manifest) InstallDependencyWithCache(dep Dependency, cacheFile string, 
 		return err
 	}
 
-	entry, err := m.getEntry(dep)
+	entry, err := m.GetEntry(dep)
 	if err != nil {
 		return err
 	}
@@ -242,12 +242,12 @@ func (m *Manifest) InstallDependencyWithCache(dep Dependency, cacheFile string, 
 	}else{
 		m.log.BeginStep("Installing %s %s from application cache", dep.Name, dep.Version)
 	}
-	err = m.warnNewerPatch(dep)
+	err = m.WarnNewerPatch(dep)
 	if err != nil {
 		return err
 	}
 
-	err = m.warnEndOfLife(dep)
+	err = m.WarnEndOfLife(dep)
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func (m *Manifest) InstallDependencyWithCache(dep Dependency, cacheFile string, 
 }
 
 
-func (m *Manifest) warnNewerPatch(dep Dependency) error {
+func (m *Manifest) WarnNewerPatch(dep Dependency) error {
 	versions := m.AllDependencyVersions(dep.Name)
 
 	v, err := semver.NewVersion(dep.Version)
@@ -290,7 +290,7 @@ func (m *Manifest) warnNewerPatch(dep Dependency) error {
 	return nil
 }
 
-func (m *Manifest) warnEndOfLife(dep Dependency) error {
+func (m *Manifest) WarnEndOfLife(dep Dependency) error {
 	matchVersion := func(versionLine, depVersion string) bool {
 		return versionLine == depVersion
 	}
@@ -328,7 +328,7 @@ func (m *Manifest) warnEndOfLife(dep Dependency) error {
 }
 
 func (m *Manifest) FetchDependency(dep Dependency, outputFile string) error {
-	entry, err := m.getEntry(dep)
+	entry, err := m.GetEntry(dep)
 	if err != nil {
 		return err
 	}
@@ -392,7 +392,8 @@ func (m *Manifest) InstallOnlyVersion(depName string, installDir string) error {
 	return m.InstallDependency(dep, installDir)
 }
 
-func (m *Manifest) getEntry(dep Dependency) (*ManifestEntry, error) {
+
+func (m *Manifest) GetEntry(dep Dependency) (*ManifestEntry, error) {
 	for _, e := range m.ManifestEntries {
 		if e.Dependency == dep {
 			return &e, nil

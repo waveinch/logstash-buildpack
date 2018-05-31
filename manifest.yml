@@ -10,7 +10,9 @@ default_versions:
 - name: openjdk
   version: '1.8.x'
 - name: curator
-  version: '5.0.x'
+  version: '5.4.x'
+- name: python3
+  version: '3.6.x'
 - name: gte
   version: '1.0.x'
 - name: jq
@@ -43,9 +45,15 @@ dependencies:
   cf_stacks:
   - cflinuxfs2
 - name: curator
-  version: 5.0.4
-  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/curator-5.0.4-python-3.6.1.tar.gz
-  sha256: 229691d0d5367c10b56a6d2971af4132fcba56ac70eab84dce388636fd08eb71
+  version: 5.4.1
+  uri: https://swisscom-buildpacks.scapp.io/dependencies/elk/curator-5.4.1.tar.gz
+  sha256: 0fc3ec3921fa15b4acc8d7aee00a1022144e95bc567ed7c04564b7eadc37356d
+  cf_stacks:
+  - cflinuxfs2
+- name: python3
+  version: 3.6.5
+  uri: https://swisscom-buildpacks.scapp.io/dependencies/python/python-3.6.5.tar.gz
+  sha256: 0974090807dd66e19d862dabd78aff496563dd862630674a95c9f9c98e447729
   cf_stacks:
   - cflinuxfs2
 - name: gte
@@ -77,6 +85,7 @@ include_files:
 - defaults/curator/actions.yml
 - defaults/curator/curator.yml
 - defaults/templates/cf-filter-syslog.conf
+- defaults/templates/cf-input-http.conf
 - defaults/templates/cf-input-syslog.conf
 - defaults/templates/cf-input-http.conf
 - defaults/templates/cf-output-elasticsearch.conf
