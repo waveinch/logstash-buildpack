@@ -111,6 +111,9 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 				$GTE_HOME/gte $HOME/curator.d $HOME/curator.conf.d
 				$GTE_HOME/gte -n $LS_ROOT/curator.d $HOME/curator.conf.d
 
+				# copy logstash.yml
+				$GTE_HOME/gte -n $LOGSTASH_HOME/config/logstash $HOME/logstash.yml
+
 				$GTE_HOME/gte $LS_ROOT/ofelia/scripts $HOME/bin
 				$GTE_HOME/gte $LS_ROOT/ofelia/config $HOME/ofelia
 
@@ -133,7 +136,7 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 					$OFELIA_HOME/ofelia daemon --config ${HOME}/ofelia/schedule.ini 2>&1 &
 				fi
 
-				$LOGSTASH_HOME/bin/logstash -f logstash.conf.d $LS_CMD_ARGS
+				$LOGSTASH_HOME/bin/logstash -c $HOME/logstash.yml -f logstash.conf.d $LS_CMD_ARGS
 				`))
 
 	err := ioutil.WriteFile(filepath.Join(gf.Stager.BuildDir(), "bin/run.sh"), []byte(content), 0755)
