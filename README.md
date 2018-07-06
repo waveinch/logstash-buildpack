@@ -86,6 +86,7 @@ A Logstash Cloud Foundry App has the following structure:
 ├── plugins
 │   └── logstash-output-kafka-7.0.4.gem
 ├── Logstash
+├── logstash.yml
 └── manifest.yml
 ```
 
@@ -179,6 +180,12 @@ This is the [Cloud Foundry application manifest](https://docs.cloudfoundry.org/d
 
 This file may be used to set the service binding
 
+
+#### logstash.yml
+
+This is the [Logstash configuration](https://www.elastic.co/guide/en/logstash/master/logstash-settings-file.html) file.
+
+This file is optional and can be used to provide a custom logstash configuration.
 
 #### certificates folder
 
