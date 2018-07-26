@@ -138,10 +138,11 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 					$OFELIA_HOME/ofelia daemon --config ${HOME}/ofelia/schedule.ini 2>&1 &
 				fi
 				if [ -f $HOME/logstash.yml ] ; then
-					XPACK-PIPELINES=$(grep pipeline logstash.yml)
+					grep -q pipeline logstash.yml
+					XPACK-PIPELINES=$?
 				fi
 
-				if [ -n "$XPACK-PIPELINES" ] ; then
+				if [ $XPACK-PIPELINES -eq 0 ] ; then
 					$LOGSTASH_HOME/bin/logstash $LS_CMD_ARGS
 				elif
 					$LOGSTASH_HOME/bin/logstash -f logstash.conf.d $LS_CMD_ARGS
