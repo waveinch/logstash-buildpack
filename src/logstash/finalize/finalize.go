@@ -144,7 +144,7 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 
 				if [ "$XPACK_PIPELINES" -eq 0 ] ; then
 					$LOGSTASH_HOME/bin/logstash $LS_CMD_ARGS
-				elif
+				else
 					$LOGSTASH_HOME/bin/logstash -f logstash.conf.d $LS_CMD_ARGS
 				fi
 				`))
