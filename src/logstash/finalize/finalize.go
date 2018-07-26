@@ -112,7 +112,7 @@ func (gf *Finalizer) CreateStartupEnvironment(tempDir string) error {
 				$GTE_HOME/gte -n $LS_ROOT/curator.d $HOME/curator.conf.d
 
 				# copy logstash.yml
-				$GTE_HOME/gte -n $LOGSTASH_HOME/config/logstash $HOME/logstash.yml
+				$GTE_HOME/gte -n $LOGSTASH_HOME/config/logstash.yml $HOME/logstash.yml
 
 				$GTE_HOME/gte $LS_ROOT/ofelia/scripts $HOME/bin
 				$GTE_HOME/gte $LS_ROOT/ofelia/config $HOME/ofelia
