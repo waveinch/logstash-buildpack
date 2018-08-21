@@ -861,6 +861,8 @@ func (gs *Supplier) InstallTemplates() error {
 						ti.ServiceInstanceName = vcapServices[0].Name
 						gs.TemplatesToInstall = append(gs.TemplatesToInstall, ti)
 					}
+					// export service instance for curator.yml
+					os.Setenv("SERVICE_INSTANCE_NAME", vcapServices[0].Name)
 				} else {
 					ti := t
 					ti.ServiceInstanceName = ""
@@ -906,13 +908,17 @@ func (gs *Supplier) InstallTemplates() error {
 		}
 	}
 
-	os.Setenv("SERVICE_INSTANCE_NAME", vcapServices[0].Name)
 	os.Setenv("CREDENTIALS_HOST_FIELD", gs.TemplatesConfig.Alias.CredentialsHostField)
 	os.Setenv("CREDENTIALS_USERNAME_FIELD", gs.TemplatesConfig.Alias.CredentialsUsernameField)
 	os.Setenv("CREDENTIALS_PASSWORD_FIELD", gs.TemplatesConfig.Alias.CredentialsPasswordField)
 
 	//copy templates --> conf.d
 	for _, ti := range gs.TemplatesToInstall {
+
+		os.Setenv("SERVICE_INSTANCE_NAME", ti.ServiceInstanceName)
+		os.Setenv("CREDENTIALS_HOST_FIELD", gs.TemplatesConfig.Alias.CredentialsHostField)
+		os.Setenv("CREDENTIALS_USERNAME_FIELD", gs.TemplatesConfig.Alias.CredentialsUsernameField)
+		os.Setenv("CREDENTIALS_PASSWORD_FIELD", gs.TemplatesConfig.Alias.CredentialsPasswordField)
 
 		if len(gs.LogstashConfig.LogstashCredentials.Username) > 0 {
 			os.Setenv("LOGSTASH_AUTH", "true")
